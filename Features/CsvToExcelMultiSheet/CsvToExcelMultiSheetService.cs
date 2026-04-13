@@ -8,12 +8,11 @@ namespace FileForgeApi.Features.CsvToExcelMultiSheet;
 public sealed class CsvToExcelMultiSheetService(ILogger<CsvToExcelMultiSheetService> logger)
     : ICsvToExcelMultiSheetService
 {
-    public async Task<Result<CsvToExcelMultiSheetResponse>> ConvertAsync(
-        CsvToExcelMultiSheetRequest? request,
-        string? separator,
-        string? encoding)
+    public async Task<Result<CsvToExcelMultiSheetResponse>> ConvertAsync(CsvToExcelMultiSheetRequest? request)
     {
-        var validation = CsvToExcelMultiSheetValidator.Validate(request, separator, encoding);
+        var validation = CsvToExcelMultiSheetValidator.Validate(request);
+        var separator = request?.Separator;
+        var encoding = request?.Encoding;
         if (!validation.IsSuccess)
             return Result<CsvToExcelMultiSheetResponse>.Failure(validation.Error!);
 

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.CsvToJson;
 using FileForgeApi.Shared.Documents;
 using FileForgeApi.Shared.Results;
@@ -53,24 +54,72 @@ public class CsvToJsonServiceTests
     }
 
     [Fact]
-    public async Task ConvertAsync_ValidCsv_ReturnsRows()
+    public async Task ConvertAsync_InferTypesFalse_ReturnsStringElements()
     {
         var base64 = CreateTestCsvBase64Internal(new[]
         {
             new Dictionary<string, object> { ["Nombre"] = "Alice", ["Edad"] = 30 },
             new Dictionary<string, object> { ["Nombre"] = "Bob", ["Edad"] = 25 }
         });
+        var request = new CsvToJsonRequest(base64, InferTypes: false);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.Rows.Count);
+        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Nombre"].ValueKind);
+        Assert.Equal("Alice", result.Value.Rows[0]["Nombre"].GetString());
+        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Edad"].ValueKind);
+        Assert.Equal("30", result.Value.Rows[0]["Edad"].GetString());
+    }
+
+    [Fact]
+    public async Task ConvertAsync_InferTypesTrue_ReturnsTypedElements()
+    {
+        var base64 = CreateTestCsvBase64Internal(new[]
+        {
+            new Dictionary<string, object> { ["Nombre"] = "Alice", ["Edad"] = 30 }
+        });
+        var request = new CsvToJsonRequest(base64, InferTypes: true);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value!.Rows);
+        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Nombre"].ValueKind);
+        Assert.Equal(JsonValueKind.Number, result.Value.Rows[0]["Edad"].ValueKind);
+        Assert.Equal(30, result.Value.Rows[0]["Edad"].GetInt32());
+    }
+
+    [Fact]
+    public async Task ConvertAsync_InferTypesDefault_TreatsValuesAsStrings()
+    {
+        var base64 = CreateTestCsvBase64Internal(new[]
+        {
+            new Dictionary<string, object> { ["Valor"] = 42 }
+        });
         var request = new CsvToJsonRequest(base64);
 
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
+        Assert.Equal(JsonValueKind.String, result.Value!.Rows[0]["Valor"].ValueKind);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_InferTypesTrue_BooleanValues_ReturnsBoolElements()
+    {
+        var csv = "Activo\ntrue\nfalse";
+        var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
+        var base64 = Convert.ToBase64String(bytes);
+        var request = new CsvToJsonRequest(base64, InferTypes: true);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value!.Rows.Count);
-        Assert.Equal("Alice", result.Value.Rows[0]["Nombre"]);
-        Assert.Equal("30", result.Value.Rows[0]["Edad"]);
-        Assert.Equal("Bob", result.Value.Rows[1]["Nombre"]);
-        Assert.Equal("25", result.Value.Rows[1]["Edad"]);
+        Assert.Equal(JsonValueKind.True, result.Value.Rows[0]["Activo"].ValueKind);
+        Assert.Equal(JsonValueKind.False, result.Value.Rows[1]["Activo"].ValueKind);
     }
 
     [Fact]
@@ -100,8 +149,8 @@ public class CsvToJsonServiceTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Single(result.Value!.Rows);
-        Assert.Equal("1", result.Value.Rows[0]["A"]);
-        Assert.Equal("2", result.Value.Rows[0]["B"]);
+        Assert.Equal("1", result.Value.Rows[0]["A"].GetString());
+        Assert.Equal("2", result.Value.Rows[0]["B"].GetString());
     }
 
     [Fact]

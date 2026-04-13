@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.JsonToCsv;
 
 namespace FileForgeApi.Tests.Features.JsonToCsv;
@@ -38,7 +39,7 @@ public class JsonToCsvValidatorTests
     [Fact]
     public void Validate_RowsWithOnlyEmptyDictionaries_ReturnsFailure()
     {
-        var request = new JsonToCsvRequest([new Dictionary<string, string>()]);
+        var request = new JsonToCsvRequest([new Dictionary<string, JsonElement>()]);
 
         var result = JsonToCsvValidator.Validate(request);
 
@@ -51,7 +52,11 @@ public class JsonToCsvValidatorTests
     {
         var request = new JsonToCsvRequest(
         [
-            new Dictionary<string, string> { ["Nombre"] = "Alice", ["Edad"] = "30" }
+            new Dictionary<string, JsonElement>
+            {
+                ["Nombre"] = JsonDocument.Parse("\"Alice\"").RootElement.Clone(),
+                ["Edad"] = JsonDocument.Parse("30").RootElement.Clone()
+            }
         ]);
 
         var result = JsonToCsvValidator.Validate(request);
@@ -65,7 +70,7 @@ public class JsonToCsvValidatorTests
     public void Validate_SeparatorWithMultipleChars_ReturnsFailure()
     {
         var request = new JsonToCsvRequest(
-            [new Dictionary<string, string> { ["A"] = "1" }],
+            [new Dictionary<string, JsonElement> { ["A"] = JsonDocument.Parse("\"1\"").RootElement.Clone() }],
             Separator: ";;");
 
         var result = JsonToCsvValidator.Validate(request);
@@ -78,7 +83,7 @@ public class JsonToCsvValidatorTests
     public void Validate_InvalidEncoding_ReturnsFailure()
     {
         var request = new JsonToCsvRequest(
-            [new Dictionary<string, string> { ["A"] = "1" }],
+            [new Dictionary<string, JsonElement> { ["A"] = JsonDocument.Parse("\"1\"").RootElement.Clone() }],
             Encoding: "invalid-encoding");
 
         var result = JsonToCsvValidator.Validate(request);
@@ -91,7 +96,7 @@ public class JsonToCsvValidatorTests
     public void Validate_InvalidNewLine_ReturnsFailure()
     {
         var request = new JsonToCsvRequest(
-            [new Dictionary<string, string> { ["A"] = "1" }],
+            [new Dictionary<string, JsonElement> { ["A"] = JsonDocument.Parse("\"1\"").RootElement.Clone() }],
             NewLine: "invalid");
 
         var result = JsonToCsvValidator.Validate(request);

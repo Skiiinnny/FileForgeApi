@@ -1,3 +1,4 @@
+using FileForgeApi.Shared.Json;
 using FileForgeApi.Shared.Results;
 using MiniExcelLibs;
 
@@ -15,7 +16,12 @@ public sealed class JsonToExcelMultiSheetService(ILogger<JsonToExcelMultiSheetSe
         var sheets = validation.Value!;
         var sheetsDict = new Dictionary<string, object>();
         foreach (var (name, rows) in sheets)
-            sheetsDict[name] = rows;
+        {
+            sheetsDict[name] = rows.Select(row =>
+                (IDictionary<string, object?>)row.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.ToClrObject())).ToList();
+        }
 
         var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xlsx");
         try

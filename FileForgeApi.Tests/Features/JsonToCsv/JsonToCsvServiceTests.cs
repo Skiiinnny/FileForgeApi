@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.CsvToJson;
 using FileForgeApi.Features.JsonToCsv;
 using Microsoft.Extensions.Logging;
@@ -36,12 +37,12 @@ public class JsonToCsvServiceTests
     }
 
     [Fact]
-    public async Task ConvertAsync_ValidRows_ReturnsBase64Csv()
+    public async Task ConvertAsync_ValidStringRows_ReturnsBase64Csv()
     {
         var request = new JsonToCsvRequest(
         [
-            new Dictionary<string, string> { ["Nombre"] = "Alice", ["Edad"] = "30" },
-            new Dictionary<string, string> { ["Nombre"] = "Bob", ["Edad"] = "25" }
+            new Dictionary<string, JsonElement> { ["Nombre"] = JsonValue("Alice"), ["Edad"] = JsonValue("30") },
+            new Dictionary<string, JsonElement> { ["Nombre"] = JsonValue("Bob"), ["Edad"] = JsonValue("25") }
         ]);
 
         var result = await _sut.ConvertAsync(request);
@@ -55,11 +56,45 @@ public class JsonToCsvServiceTests
     }
 
     [Fact]
+    public async Task ConvertAsync_NumericRows_ReturnsBase64Csv()
+    {
+        var request = new JsonToCsvRequest(
+        [
+            new Dictionary<string, JsonElement>
+            {
+                ["Nombre"] = JsonValue("Alice"),
+                ["Edad"] = JsonNumber(30),
+                ["Activo"] = JsonBool(true)
+            }
+        ]);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+        var bytes = Convert.FromBase64String(result.Value!.Base64Content);
+        var csv = System.Text.Encoding.UTF8.GetString(bytes);
+        Assert.Contains("Alice", csv);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_NullValue_WritesEmptyCell()
+    {
+        var request = new JsonToCsvRequest(
+        [
+            new Dictionary<string, JsonElement> { ["Col"] = JsonNull() }
+        ]);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
     public async Task ConvertAsync_ValidRows_WithSeparatorSemicolon_ReturnsCsvWithSemicolon()
     {
         var request = new JsonToCsvRequest(
             [
-                new Dictionary<string, string> { ["A"] = "1", ["B"] = "2" }
+                new Dictionary<string, JsonElement> { ["A"] = JsonValue("1"), ["B"] = JsonValue("2") }
             ],
             Separator: ";");
 
@@ -75,7 +110,7 @@ public class JsonToCsvServiceTests
     public async Task ConvertAsync_InvalidEncoding_ReturnsFailure()
     {
         var request = new JsonToCsvRequest(
-            [new Dictionary<string, string> { ["A"] = "1" }],
+            [new Dictionary<string, JsonElement> { ["A"] = JsonValue("1") }],
             Encoding: "invalid-encoding-xyz");
 
         var result = await _sut.ConvertAsync(request);
@@ -85,12 +120,12 @@ public class JsonToCsvServiceTests
     }
 
     [Fact]
-    public async Task ConvertAsync_RoundTrip_JsonToCsvToJson_PreservesData()
+    public async Task ConvertAsync_RoundTrip_JsonToCsvToJson_PreservesStringData()
     {
-        var originalRows = new List<Dictionary<string, string>>
+        var originalRows = new List<Dictionary<string, JsonElement>>
         {
-            new() { ["Nombre"] = "Alice", ["Edad"] = "30" },
-            new() { ["Nombre"] = "Bob", ["Edad"] = "25" }
+            new() { ["Nombre"] = JsonValue("Alice"), ["Edad"] = JsonValue("30") },
+            new() { ["Nombre"] = JsonValue("Bob"), ["Edad"] = JsonValue("25") }
         };
         var request = new JsonToCsvRequest(originalRows);
 
@@ -105,9 +140,21 @@ public class JsonToCsvServiceTests
 
         var readBack = fromCsvResult.Value!.Rows;
         Assert.Equal(originalRows.Count, readBack.Count);
-        Assert.Equal("Alice", readBack[0]["Nombre"]);
-        Assert.Equal("30", readBack[0]["Edad"]);
-        Assert.Equal("Bob", readBack[1]["Nombre"]);
-        Assert.Equal("25", readBack[1]["Edad"]);
+        Assert.Equal("Alice", readBack[0]["Nombre"].GetString());
+        Assert.Equal("30", readBack[0]["Edad"].GetString());
+        Assert.Equal("Bob", readBack[1]["Nombre"].GetString());
+        Assert.Equal("25", readBack[1]["Edad"].GetString());
     }
+
+    private static JsonElement JsonValue(string s) =>
+        JsonDocument.Parse($"\"{s}\"").RootElement.Clone();
+
+    private static JsonElement JsonNumber(double n) =>
+        JsonDocument.Parse(n.ToString(System.Globalization.CultureInfo.InvariantCulture)).RootElement.Clone();
+
+    private static JsonElement JsonBool(bool b) =>
+        JsonDocument.Parse(b ? "true" : "false").RootElement.Clone();
+
+    private static JsonElement JsonNull() =>
+        JsonDocument.Parse("null").RootElement.Clone();
 }

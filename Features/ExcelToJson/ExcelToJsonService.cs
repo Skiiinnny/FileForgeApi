@@ -1,4 +1,6 @@
+using System.Text.Json;
 using FileForgeApi.Shared.Documents;
+using FileForgeApi.Shared.Json;
 using FileForgeApi.Shared.Results;
 using MiniExcelLibs;
 
@@ -22,6 +24,8 @@ public sealed class ExcelToJsonService(ILogger<ExcelToJsonService> logger, IDocu
             fileBytes = fetchResult.Value;
         }
 
+        var inferTypes = request!.InferTypes == true;
+
         List<object> queryResult;
         try
         {
@@ -35,19 +39,21 @@ public sealed class ExcelToJsonService(ILogger<ExcelToJsonService> logger, IDocu
             return Result<ExcelToJsonResponse>.Failure($"No se pudo leer el Excel: {ex.Message}");
         }
 
-        var rows = new List<Dictionary<string, string>>();
+        var rows = new List<Dictionary<string, JsonElement>>();
 
         foreach (var row in queryResult)
         {
             if (row is not IDictionary<string, object> dictionaryRow)
                 continue;
 
-            var dict = new Dictionary<string, string>();
+            var dict = new Dictionary<string, JsonElement>();
             foreach (var kvp in dictionaryRow)
             {
                 var key = kvp.Key?.ToString() ?? "ColumnaSinNombre";
-                var value = kvp.Value?.ToString() ?? string.Empty;
-                dict[key] = value;
+                var rawValue = kvp.Value?.ToString() ?? string.Empty;
+                dict[key] = inferTypes
+                    ? JsonTypeInferenceHelper.TryInfer(rawValue)
+                    : JsonTypeInferenceHelper.WrapString(rawValue);
             }
 
             rows.Add(dict);

@@ -1,4 +1,5 @@
 using FileForgeApi.Shared.Encoding;
+using FileForgeApi.Shared.Json;
 using FileForgeApi.Shared.Results;
 using MiniExcelLibs;
 using MiniExcelLibs.Csv;
@@ -16,11 +17,16 @@ public sealed class JsonToCsvService(ILogger<JsonToCsvService> logger) : IJsonTo
         var rows = validation.Value!;
         var config = BuildCsvConfiguration(request!);
 
+        var clrRows = rows.Select(row =>
+            (IDictionary<string, object?>)row.ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.ToClrObject())).ToList();
+
         byte[] csvBytes;
         try
         {
             using var stream = new MemoryStream();
-            await stream.SaveAsAsync(rows, excelType: ExcelType.CSV, configuration: config);
+            await stream.SaveAsAsync(clrRows, excelType: ExcelType.CSV, configuration: config);
             csvBytes = stream.ToArray();
         }
         catch (Exception ex)

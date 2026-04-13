@@ -1,3 +1,4 @@
+using FileForgeApi.Shared.Json;
 using FileForgeApi.Shared.Results;
 using MiniExcelLibs;
 
@@ -13,11 +14,16 @@ public sealed class JsonToExcelService(ILogger<JsonToExcelService> logger) : IJs
 
         var rows = validation.Value!;
 
+        var clrRows = rows.Select(row =>
+            (IDictionary<string, object?>)row.ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.ToClrObject())).ToList();
+
         byte[] excelBytes;
         try
         {
             using var stream = new MemoryStream();
-            await stream.SaveAsAsync(rows);
+            await stream.SaveAsAsync(clrRows);
             excelBytes = stream.ToArray();
         }
         catch (Exception ex)

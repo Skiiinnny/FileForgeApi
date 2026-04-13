@@ -74,9 +74,9 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
         {
             ["Ventas"] = ventasCsv,
             ["Gastos"] = gastosCsv
-        });
+        }, Separator: ",", Encoding: "utf-8");
 
-        var result = await _service.ConvertAsync(request, ",", "utf-8");
+        var result = await _service.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
@@ -89,8 +89,8 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
         Assert.Equal(2, readResult.Value!.Sheets.Count);
         Assert.True(readResult.Value.Sheets.ContainsKey("Ventas"));
         Assert.True(readResult.Value.Sheets.ContainsKey("Gastos"));
-        Assert.Equal("Manzana", readResult.Value.Sheets["Ventas"][0]["Producto"]);
-        Assert.Equal("Alquiler", readResult.Value.Sheets["Gastos"][0]["Concepto"]);
+        Assert.Equal("Manzana", readResult.Value.Sheets["Ventas"][0]["Producto"].GetString());
+        Assert.Equal("Alquiler", readResult.Value.Sheets["Gastos"][0]["Concepto"].GetString());
     }
 
     // 6.3 - Custom separator (;)
@@ -106,9 +106,9 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
         var request = new CsvToExcelMultiSheetRequest(new Dictionary<string, string>
         {
             ["Datos"] = csvBase64
-        });
+        }, Separator: ";", Encoding: "utf-8");
 
-        var result = await _service.ConvertAsync(request, ";", "utf-8");
+        var result = await _service.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
@@ -118,8 +118,8 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
 
         Assert.True(readResult.IsSuccess);
         Assert.True(readResult.Value!.Sheets.ContainsKey("Datos"));
-        Assert.Equal("Alice", readResult.Value.Sheets["Datos"][0]["Nombre"]);
-        Assert.Equal("30", readResult.Value.Sheets["Datos"][0]["Edad"]);
+        Assert.Equal("Alice", readResult.Value.Sheets["Datos"][0]["Nombre"].GetString());
+        Assert.Equal("30", readResult.Value.Sheets["Datos"][0]["Edad"].GetString());
     }
 
     // 6.4 - Empty Sheets → HTTP 400
@@ -128,7 +128,7 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
     {
         var request = new CsvToExcelMultiSheetRequest(new Dictionary<string, string>());
 
-        var result = await _service.ConvertAsync(request, ",", "utf-8");
+        var result = await _service.ConvertAsync(request);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("Sheets", result.Error!);
@@ -138,11 +138,11 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
     public async Task Endpoint_EmptySheets_ReturnsBadRequest()
     {
         _mockService
-            .ConvertAsync(Arg.Any<CsvToExcelMultiSheetRequest?>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .ConvertAsync(Arg.Any<CsvToExcelMultiSheetRequest?>())
             .Returns(Task.FromResult(Result<CsvToExcelMultiSheetResponse>.Failure("Sheets vacío")));
 
         var httpResponse = await _client.PostAsJsonAsync(
-            "/csv-to-excel-multi-sheet",
+            "/api/csv/to-excel/multi-sheet",
             new CsvToExcelMultiSheetRequest(new Dictionary<string, string>()));
 
         Assert.Equal(HttpStatusCode.BadRequest, httpResponse.StatusCode);
@@ -160,7 +160,7 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
             [longName] = csvBase64
         });
 
-        var result = await _service.ConvertAsync(request, ",", "utf-8");
+        var result = await _service.ConvertAsync(request);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("31", result.Error!);
@@ -170,12 +170,12 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
     public async Task Endpoint_SheetNameTooLong_ReturnsBadRequest()
     {
         _mockService
-            .ConvertAsync(Arg.Any<CsvToExcelMultiSheetRequest?>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .ConvertAsync(Arg.Any<CsvToExcelMultiSheetRequest?>())
             .Returns(Task.FromResult(Result<CsvToExcelMultiSheetResponse>.Failure("Nombre de hoja supera 31 caracteres")));
 
         var longName = new string('A', 32);
         var httpResponse = await _client.PostAsJsonAsync(
-            "/csv-to-excel-multi-sheet",
+            "/api/csv/to-excel/multi-sheet",
             new CsvToExcelMultiSheetRequest(new Dictionary<string, string> { [longName] = "dGVzdA==" }));
 
         Assert.Equal(HttpStatusCode.BadRequest, httpResponse.StatusCode);
@@ -192,7 +192,7 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
             [""] = csvBase64
         });
 
-        var result = await _service.ConvertAsync(request, ",", "utf-8");
+        var result = await _service.ConvertAsync(request);
 
         Assert.False(result.IsSuccess);
         Assert.Contains("vacío", result.Error!);
@@ -202,11 +202,11 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
     public async Task Endpoint_EmptySheetName_ReturnsBadRequest()
     {
         _mockService
-            .ConvertAsync(Arg.Any<CsvToExcelMultiSheetRequest?>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .ConvertAsync(Arg.Any<CsvToExcelMultiSheetRequest?>())
             .Returns(Task.FromResult(Result<CsvToExcelMultiSheetResponse>.Failure("Nombre de hoja vacío")));
 
         var httpResponse = await _client.PostAsJsonAsync(
-            "/csv-to-excel-multi-sheet",
+            "/api/csv/to-excel/multi-sheet",
             new CsvToExcelMultiSheetRequest(new Dictionary<string, string> { [""] = "dGVzdA==" }));
 
         Assert.Equal(HttpStatusCode.BadRequest, httpResponse.StatusCode);
@@ -225,7 +225,7 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
             ["Personas"] = csvBase64
         });
 
-        var result = await _service.ConvertAsync(request, ",", "utf-8");
+        var result = await _service.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);

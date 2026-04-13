@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.JsonToExcelMultiSheet;
 
 namespace FileForgeApi.Tests.Features.JsonToExcelMultiSheet;
@@ -27,7 +28,7 @@ public class JsonToExcelMultiSheetValidatorTests
     [Fact]
     public void Validate_EmptySheets_ReturnsFailure()
     {
-        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, string>>>());
+        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, JsonElement>>>());
 
         var result = JsonToExcelMultiSheetValidator.Validate(request);
 
@@ -38,7 +39,7 @@ public class JsonToExcelMultiSheetValidatorTests
     [Fact]
     public void Validate_SheetWithEmptyRows_ReturnsFailure()
     {
-        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, string>>>
+        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, JsonElement>>>
         {
             ["Hoja1"] = []
         });
@@ -52,9 +53,9 @@ public class JsonToExcelMultiSheetValidatorTests
     [Fact]
     public void Validate_SheetWithRowsWithoutKeys_ReturnsFailure()
     {
-        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, string>>>
+        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, JsonElement>>>
         {
-            ["Hoja1"] = [new Dictionary<string, string>()]
+            ["Hoja1"] = [new Dictionary<string, JsonElement>()]
         });
 
         var result = JsonToExcelMultiSheetValidator.Validate(request);
@@ -66,9 +67,12 @@ public class JsonToExcelMultiSheetValidatorTests
     [Fact]
     public void Validate_ValidSheets_ReturnsSuccess()
     {
-        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, string>>>
+        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, JsonElement>>>
         {
-            ["Hoja1"] = [new Dictionary<string, string> { ["A"] = "valor" }]
+            ["Hoja1"] = [new Dictionary<string, JsonElement>
+            {
+                ["A"] = JsonDocument.Parse("\"valor\"").RootElement.Clone()
+            }]
         });
 
         var result = JsonToExcelMultiSheetValidator.Validate(request);

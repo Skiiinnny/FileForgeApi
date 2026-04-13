@@ -4,8 +4,5 @@ namespace FileForgeApi.Features.CsvToExcelMultiSheet;
 
 public interface ICsvToExcelMultiSheetService
 {
-    Task<Result<CsvToExcelMultiSheetResponse>> ConvertAsync(
-        CsvToExcelMultiSheetRequest? request,
-        string? separator,
-        string? encoding);
+    Task<Result<CsvToExcelMultiSheetResponse>> ConvertAsync(CsvToExcelMultiSheetRequest? request);
 }

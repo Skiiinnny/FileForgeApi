@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using FileForgeApi.Features.Base64ToCsv;
 using FileForgeApi.Features.Base64ToExcel;
@@ -48,6 +49,9 @@ namespace FileForgeApi.Shared.Serialization;
 [JsonSerializable(typeof(List<Dictionary<string, string>>))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 [JsonSerializable(typeof(Dictionary<string, List<Dictionary<string, string>>>))]
+[JsonSerializable(typeof(Dictionary<string, JsonElement>))]
+[JsonSerializable(typeof(List<Dictionary<string, JsonElement>>))]
+[JsonSerializable(typeof(Dictionary<string, List<Dictionary<string, JsonElement>>>))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(Amazon.Lambda.APIGatewayEvents.APIGatewayProxyRequest))]
 [JsonSerializable(typeof(Amazon.Lambda.APIGatewayEvents.APIGatewayProxyResponse))]

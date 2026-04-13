@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.CsvToJson;
 using FileForgeApi.Shared.Results;
 using Microsoft.AspNetCore.Hosting;
@@ -43,9 +44,9 @@ public class CsvToJsonEndpointTests : IAsyncDisposable
     [Fact]
     public async Task Post_WithValidRequest_ReturnsOk()
     {
-        var response = new CsvToJsonResponse(new List<Dictionary<string, string>>
+        var response = new CsvToJsonResponse(new List<Dictionary<string, JsonElement>>
         {
-            new() { ["Col1"] = "val1" }
+            new() { ["Col1"] = JsonDocument.Parse("\"val1\"").RootElement.Clone() }
         });
         _service.ConvertAsync(Arg.Any<CsvToJsonRequest?>())
             .Returns(Task.FromResult(Result<CsvToJsonResponse>.Success(response)));

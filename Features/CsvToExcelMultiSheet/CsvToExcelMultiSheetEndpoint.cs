@@ -6,7 +6,7 @@ public static class CsvToExcelMultiSheetEndpoint
 {
     public static void MapCsvToExcelMultiSheet(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/csv-to-excel-multi-sheet", ConvertHandler)
+        app.MapPost("/api/csv/to-excel/multi-sheet", ConvertHandler)
             .WithName("CsvToExcelMultiSheet")
             .WithTags("Csv")
             .WithDescription("Convierte múltiples archivos CSV codificados en Base64 a un único Excel multi-hoja. Cada clave del objeto sheets es el nombre de una hoja y el valor es el CSV en Base64.")
@@ -17,11 +17,9 @@ public static class CsvToExcelMultiSheetEndpoint
 
     private static async Task<IResult> ConvertHandler(
         [FromBody] CsvToExcelMultiSheetRequest? request,
-        ICsvToExcelMultiSheetService service,
-        [FromQuery] string? separator = ",",
-        [FromQuery] string? encoding = "utf-8")
+        ICsvToExcelMultiSheetService service)
     {
-        var result = await service.ConvertAsync(request, separator, encoding);
+        var result = await service.ConvertAsync(request);
 
         return result.IsSuccess
             ? Results.Ok(result.Value)

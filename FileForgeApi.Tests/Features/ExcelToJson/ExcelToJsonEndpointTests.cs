@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.ExcelToJson;
 using FileForgeApi.Shared.Results;
 using Microsoft.AspNetCore.Builder;
@@ -45,9 +46,9 @@ public class ExcelToJsonEndpointTests : IAsyncDisposable
     [Fact]
     public async Task Post_WithValidRequest_ReturnsOk()
     {
-        var response = new ExcelToJsonResponse(new List<Dictionary<string, string>>
+        var response = new ExcelToJsonResponse(new List<Dictionary<string, JsonElement>>
         {
-            new() { ["Col1"] = "val1" }
+            new() { ["Col1"] = JsonDocument.Parse("\"val1\"").RootElement.Clone() }
         });
         _service.ConvertAsync(Arg.Any<ExcelToJsonRequest?>())
             .Returns(Task.FromResult(Result<ExcelToJsonResponse>.Success(response)));

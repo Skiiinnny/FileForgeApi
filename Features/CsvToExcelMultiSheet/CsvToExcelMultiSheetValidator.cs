@@ -5,7 +5,7 @@ namespace FileForgeApi.Features.CsvToExcelMultiSheet;
 
 public static class CsvToExcelMultiSheetValidator
 {
-    public static Result<bool> Validate(CsvToExcelMultiSheetRequest? request, string? separator, string? encoding)
+    public static Result<bool> Validate(CsvToExcelMultiSheetRequest? request)
     {
         if (request is null)
             return Result<bool>.Failure("El cuerpo de la petición es obligatorio (JSON con Sheets).");
@@ -13,11 +13,11 @@ public static class CsvToExcelMultiSheetValidator
         if (request.Sheets is null || request.Sheets.Count == 0)
             return Result<bool>.Failure("El diccionario de hojas (Sheets) es obligatorio y debe contener al menos una entrada.");
 
-        if (separator is { Length: not 1 })
+        if (request.Separator is { Length: not 1 })
             return Result<bool>.Failure("Separator debe ser un único carácter.");
 
-        if (encoding is { Length: > 0 } && !EncodingHelper.TryGetEncoding(encoding, out _))
-            return Result<bool>.Failure($"Encoding no válido: {encoding}");
+        if (request.Encoding is { Length: > 0 } && !EncodingHelper.TryGetEncoding(request.Encoding, out _))
+            return Result<bool>.Failure($"Encoding no válido: {request.Encoding}");
 
         foreach (var (sheetName, csvBase64) in request.Sheets)
         {

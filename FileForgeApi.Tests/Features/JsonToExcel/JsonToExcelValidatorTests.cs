@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.JsonToExcel;
 
 namespace FileForgeApi.Tests.Features.JsonToExcel;
@@ -38,7 +39,7 @@ public class JsonToExcelValidatorTests
     [Fact]
     public void Validate_RowsWithOnlyEmptyDictionaries_ReturnsFailure()
     {
-        var request = new JsonToExcelRequest([new Dictionary<string, string>()]);
+        var request = new JsonToExcelRequest([new Dictionary<string, JsonElement>()]);
 
         var result = JsonToExcelValidator.Validate(request);
 
@@ -51,7 +52,11 @@ public class JsonToExcelValidatorTests
     {
         var request = new JsonToExcelRequest(
         [
-            new Dictionary<string, string> { ["Nombre"] = "Alice", ["Edad"] = "30" }
+            new Dictionary<string, JsonElement>
+            {
+                ["Nombre"] = JsonDocument.Parse("\"Alice\"").RootElement.Clone(),
+                ["Edad"] = JsonDocument.Parse("30").RootElement.Clone()
+            }
         ]);
 
         var result = JsonToExcelValidator.Validate(request);

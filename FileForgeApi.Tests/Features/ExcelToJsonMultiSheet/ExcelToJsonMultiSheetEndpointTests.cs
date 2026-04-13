@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.ExcelToJsonMultiSheet;
 using FileForgeApi.Shared.Results;
 using Microsoft.AspNetCore.Hosting;
@@ -43,9 +44,9 @@ public class ExcelToJsonMultiSheetEndpointTests : IAsyncDisposable
     [Fact]
     public async Task Post_WithValidRequest_ReturnsOk()
     {
-        var response = new ExcelToJsonMultiSheetResponse(new Dictionary<string, List<Dictionary<string, string>>>
+        var response = new ExcelToJsonMultiSheetResponse(new Dictionary<string, List<Dictionary<string, JsonElement>>>
         {
-            ["Sheet1"] = [new Dictionary<string, string> { ["Col1"] = "val1" }]
+            ["Sheet1"] = [new Dictionary<string, JsonElement> { ["Col1"] = JsonDocument.Parse("\"val1\"").RootElement.Clone() }]
         });
         _service.ConvertAsync(Arg.Any<ExcelToJsonMultiSheetRequest?>())
             .Returns(Task.FromResult(Result<ExcelToJsonMultiSheetResponse>.Success(response)));

@@ -1,4 +1,6 @@
+using System.Text.Json;
 using FileForgeApi.Shared.Documents;
+using FileForgeApi.Shared.Json;
 using FileForgeApi.Shared.Results;
 using MiniExcelLibs;
 
@@ -22,7 +24,9 @@ public sealed class ExcelToJsonMultiSheetService(ILogger<ExcelToJsonMultiSheetSe
                 return Result<ExcelToJsonMultiSheetResponse>.Failure(fetchResult.Error!);
             fileBytes = fetchResult.Value;
         }
-        var sheets = new Dictionary<string, List<Dictionary<string, string>>>();
+
+        var inferTypes = request!.InferTypes == true;
+        var sheets = new Dictionary<string, List<Dictionary<string, JsonElement>>>();
 
         try
         {
@@ -38,18 +42,20 @@ public sealed class ExcelToJsonMultiSheetService(ILogger<ExcelToJsonMultiSheetSe
                 var asyncRows = await stream.QueryAsync(useHeaderRow: true, sheetName: sheetName);
                 var queryResult = asyncRows.Cast<object>().ToList();
 
-                var rows = new List<Dictionary<string, string>>();
+                var rows = new List<Dictionary<string, JsonElement>>();
                 foreach (var row in queryResult)
                 {
                     if (row is not IDictionary<string, object> dictionaryRow)
                         continue;
 
-                    var dict = new Dictionary<string, string>();
+                    var dict = new Dictionary<string, JsonElement>();
                     foreach (var kvp in dictionaryRow)
                     {
                         var key = kvp.Key?.ToString() ?? "ColumnaSinNombre";
-                        var value = kvp.Value?.ToString() ?? string.Empty;
-                        dict[key] = value;
+                        var rawValue = kvp.Value?.ToString() ?? string.Empty;
+                        dict[key] = inferTypes
+                            ? JsonTypeInferenceHelper.TryInfer(rawValue)
+                            : JsonTypeInferenceHelper.WrapString(rawValue);
                     }
 
                     rows.Add(dict);

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.JsonToCsv;
 using FileForgeApi.Shared.Results;
 using Microsoft.AspNetCore.Hosting;
@@ -49,7 +50,7 @@ public class JsonToCsvEndpointTests : IAsyncDisposable
 
         var httpResponse = await _client.PostAsJsonAsync(
             "/api/json/to-csv",
-            new JsonToCsvRequest([new Dictionary<string, string> { ["Col1"] = "val1" }]));
+            new JsonToCsvRequest([new Dictionary<string, JsonElement> { ["Col1"] = JsonDocument.Parse("\"val1\"").RootElement.Clone() }]));
 
         Assert.Equal(HttpStatusCode.OK, httpResponse.StatusCode);
     }

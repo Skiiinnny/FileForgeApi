@@ -20,7 +20,8 @@ context: |
     - Spreadsheet rows are represented as Dictionary<string, string> (header → cell value).
     - JSON uses camelCase (configured via source generators).
     - Error responses use the format: { "error": "descriptive message" }.
-    - Common optional query parameters: separator (default ','), encoding (default 'utf-8'), newLine (default '\n').
+    - Common optional request-body parameters: separator (default ','), encoding (default 'utf-8'), newLine (default '\n').
+      These are always properties on the Request record, never [FromQuery] parameters on the handler.
 
   AOT restriction: Because the project uses PublishAot with System.Text.Json source generators,
   every new type that appears in a Request or Response (including generic wrappers) MUST be
@@ -37,3 +38,9 @@ rules:
     - Always include a task to register the feature in Program.cs using both AddX() and MapX().
     - Always include a task to add or update AppJsonSerializerContext if new serializable types are introduced.
     - Always include a task to write integration tests in FileForgeApi.Tests/Features/<Name>/.
+
+  endpoint:
+    - Never use [FromQuery] on handler parameters. Swashbuckle fails with "Failed to generate Operation
+      for action" when [FromQuery] is combined with [FromBody] + Accepts<T>() in Minimal API handlers.
+      All input — including optional parameters such as separator, encoding, and newLine — must be
+      properties on the Request record with nullable types and null defaults.

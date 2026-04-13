@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.ExcelToJson;
 using FileForgeApi.Shared.Documents;
 using FileForgeApi.Shared.Results;
@@ -50,28 +51,62 @@ public class ExcelToJsonServiceTests
     }
 
     [Fact]
-    public async Task ConvertAsync_ValidExcel_ReturnsRows()
+    public async Task ConvertAsync_InferTypesFalse_ReturnsStringElements()
     {
         var base64 = CreateTestExcelBase64(new[]
         {
             new Dictionary<string, object> { ["Nombre"] = "Alice", ["Edad"] = 30 },
             new Dictionary<string, object> { ["Nombre"] = "Bob", ["Edad"] = 25 }
         });
-        var request = new ExcelToJsonRequest(base64);
+        var request = new ExcelToJsonRequest(base64, InferTypes: false);
 
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal(2, result.Value!.Rows.Count);
-        Assert.Equal("Alice", result.Value.Rows[0]["Nombre"]);
-        Assert.Equal("30", result.Value.Rows[0]["Edad"]);
-        Assert.Equal("Bob", result.Value.Rows[1]["Nombre"]);
-        Assert.Equal("25", result.Value.Rows[1]["Edad"]);
+        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Nombre"].ValueKind);
+        Assert.Equal("Alice", result.Value.Rows[0]["Nombre"].GetString());
+        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Edad"].ValueKind);
+        Assert.Equal("30", result.Value.Rows[0]["Edad"].GetString());
     }
 
     [Fact]
-    public async Task ConvertAsync_ExcelWithNullValues_ReturnsEmptyStrings()
+    public async Task ConvertAsync_InferTypesTrue_ReturnsTypedElements()
+    {
+        var base64 = CreateTestExcelBase64(new[]
+        {
+            new Dictionary<string, object> { ["Nombre"] = "Alice", ["Edad"] = 30 }
+        });
+        var request = new ExcelToJsonRequest(base64, InferTypes: true);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Single(result.Value!.Rows);
+        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Nombre"].ValueKind);
+        Assert.Equal(JsonValueKind.Number, result.Value.Rows[0]["Edad"].ValueKind);
+        Assert.Equal(30, result.Value.Rows[0]["Edad"].GetInt32());
+    }
+
+    [Fact]
+    public async Task ConvertAsync_InferTypesDefault_TreatsValuesAsStrings()
+    {
+        var base64 = CreateTestExcelBase64(new[]
+        {
+            new Dictionary<string, object> { ["Valor"] = 42 }
+        });
+        var request = new ExcelToJsonRequest(base64);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(JsonValueKind.String, result.Value!.Rows[0]["Valor"].ValueKind);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_ExcelWithNullValues_ReturnsNullElements()
     {
         var base64 = CreateTestExcelBase64(new[]
         {
@@ -83,8 +118,7 @@ public class ExcelToJsonServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value!.Rows);
-        Assert.Equal("valor", result.Value.Rows[0]["Col1"]);
-        Assert.Equal(string.Empty, result.Value.Rows[0]["Col2"]);
+        Assert.Equal("valor", result.Value.Rows[0]["Col1"].GetString());
     }
 
     [Fact]

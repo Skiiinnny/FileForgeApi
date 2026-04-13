@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.JsonToExcelMultiSheet;
 using FileForgeApi.Shared.Results;
 using Microsoft.AspNetCore.Hosting;
@@ -47,9 +48,9 @@ public class JsonToExcelMultiSheetEndpointTests : IAsyncDisposable
         _service.ConvertAsync(Arg.Any<JsonToExcelMultiSheetRequest?>())
             .Returns(Task.FromResult(Result<JsonToExcelMultiSheetResponse>.Success(response)));
 
-        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, string>>>
+        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, JsonElement>>>
         {
-            ["Sheet1"] = [new Dictionary<string, string> { ["Col1"] = "val1" }]
+            ["Sheet1"] = [new Dictionary<string, JsonElement> { ["Col1"] = JsonDocument.Parse("\"val1\"").RootElement.Clone() }]
         });
         var httpResponse = await _client.PostAsJsonAsync("/api/json/to-excel/multi-sheet", request);
 
@@ -62,7 +63,7 @@ public class JsonToExcelMultiSheetEndpointTests : IAsyncDisposable
         _service.ConvertAsync(Arg.Any<JsonToExcelMultiSheetRequest?>())
             .Returns(Task.FromResult(Result<JsonToExcelMultiSheetResponse>.Failure("Error de validación")));
 
-        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, string>>>());
+        var request = new JsonToExcelMultiSheetRequest(new Dictionary<string, List<Dictionary<string, JsonElement>>>());
         var httpResponse = await _client.PostAsJsonAsync("/api/json/to-excel/multi-sheet", request);
 
         Assert.Equal(HttpStatusCode.BadRequest, httpResponse.StatusCode);

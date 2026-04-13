@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.ExcelToJsonMultiSheet;
 using FileForgeApi.Shared.Documents;
 using FileForgeApi.Shared.Results;
@@ -51,7 +52,7 @@ public class ExcelToJsonMultiSheetServiceTests
     }
 
     [Fact]
-    public async Task ConvertAsync_ExcelWithMultipleSheets_ReturnsAllSheets()
+    public async Task ConvertAsync_InferTypesFalse_ReturnsStringElements()
     {
         var base64 = CreateTestMultiSheetExcelBase64(new Dictionary<string, object>
         {
@@ -65,20 +66,35 @@ public class ExcelToJsonMultiSheetServiceTests
                 new Dictionary<string, object> { ["X"] = "x1", ["Y"] = "y1" }
             }
         });
-        var request = new ExcelToJsonMultiSheetRequest(base64);
+        var request = new ExcelToJsonMultiSheetRequest(base64, InferTypes: false);
 
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
         Assert.Equal(2, result.Value!.Sheets.Count);
-        Assert.True(result.Value.Sheets.ContainsKey("Hoja1"));
-        Assert.True(result.Value.Sheets.ContainsKey("Hoja2"));
-        Assert.Equal(2, result.Value.Sheets["Hoja1"].Count);
-        Assert.Single(result.Value.Sheets["Hoja2"]);
-        Assert.Equal("A1", result.Value.Sheets["Hoja1"][0]["Col1"]);
-        Assert.Equal("1", result.Value.Sheets["Hoja1"][0]["Col2"]);
-        Assert.Equal("x1", result.Value.Sheets["Hoja2"][0]["X"]);
+        Assert.Equal(JsonValueKind.String, result.Value.Sheets["Hoja1"][0]["Col2"].ValueKind);
+        Assert.Equal("1", result.Value.Sheets["Hoja1"][0]["Col2"].GetString());
+        Assert.Equal("x1", result.Value.Sheets["Hoja2"][0]["X"].GetString());
+    }
+
+    [Fact]
+    public async Task ConvertAsync_InferTypesTrue_ReturnsTypedElements()
+    {
+        var base64 = CreateTestMultiSheetExcelBase64(new Dictionary<string, object>
+        {
+            ["Hoja1"] = new[]
+            {
+                new Dictionary<string, object> { ["Col1"] = "texto", ["Col2"] = 42 }
+            }
+        });
+        var request = new ExcelToJsonMultiSheetRequest(base64, InferTypes: true);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(JsonValueKind.String, result.Value!.Sheets["Hoja1"][0]["Col1"].ValueKind);
+        Assert.Equal(JsonValueKind.Number, result.Value.Sheets["Hoja1"][0]["Col2"].ValueKind);
+        Assert.Equal(42, result.Value.Sheets["Hoja1"][0]["Col2"].GetInt32());
     }
 
     [Fact]
@@ -99,7 +115,7 @@ public class ExcelToJsonMultiSheetServiceTests
         Assert.Single(result.Value!.Sheets);
         Assert.True(result.Value.Sheets.ContainsKey("Sheet1"));
         Assert.Single(result.Value.Sheets["Sheet1"]);
-        Assert.Equal("valor", result.Value.Sheets["Sheet1"][0]["A"]);
+        Assert.Equal("valor", result.Value.Sheets["Sheet1"][0]["A"].GetString());
     }
 
     [Fact]

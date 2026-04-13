@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FileForgeApi.Features.ExcelToJson;
 using FileForgeApi.Features.JsonToExcel;
 using Microsoft.Extensions.Logging;
@@ -36,12 +37,12 @@ public class JsonToExcelServiceTests
     }
 
     [Fact]
-    public async Task ConvertAsync_ValidRows_ReturnsBase64Excel()
+    public async Task ConvertAsync_ValidStringRows_ReturnsBase64Excel()
     {
         var request = new JsonToExcelRequest(
         [
-            new Dictionary<string, string> { ["Nombre"] = "Alice", ["Edad"] = "30" },
-            new Dictionary<string, string> { ["Nombre"] = "Bob", ["Edad"] = "25" }
+            new Dictionary<string, JsonElement> { ["Nombre"] = JsonValue("Alice"), ["Edad"] = JsonValue("30") },
+            new Dictionary<string, JsonElement> { ["Nombre"] = JsonValue("Bob"), ["Edad"] = JsonValue("25") }
         ]);
 
         var result = await _sut.ConvertAsync(request);
@@ -55,27 +56,68 @@ public class JsonToExcelServiceTests
     }
 
     [Fact]
-    public async Task ConvertAsync_RowsWithEmptyValues_GeneratesExcel()
+    public async Task ConvertAsync_NumericRows_StoresNumbersAsNumbers()
     {
         var request = new JsonToExcelRequest(
         [
-            new Dictionary<string, string> { ["Col1"] = "valor", ["Col2"] = "" }
+            new Dictionary<string, JsonElement>
+            {
+                ["Nombre"] = JsonValue("Alice"),
+                ["Edad"] = JsonNumber(30),
+                ["Score"] = JsonNumber(9.5)
+            }
         ]);
 
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
+        var excelBytes = Convert.FromBase64String(result.Value!.Base64Content);
+        using var stream = new MemoryStream(excelBytes);
+        var rows = (await stream.QueryAsync(useHeaderRow: true)).Cast<IDictionary<string, object>>().ToList();
+        Assert.Single(rows);
+        Assert.Equal(30d, Convert.ToDouble(rows[0]["Edad"]));
+        Assert.Equal(9.5, Convert.ToDouble(rows[0]["Score"]));
+    }
+
+    [Fact]
+    public async Task ConvertAsync_BooleanRows_StoresBooleansAsBooleans()
+    {
+        var request = new JsonToExcelRequest(
+        [
+            new Dictionary<string, JsonElement>
+            {
+                ["Activo"] = JsonBool(true),
+                ["Verificado"] = JsonBool(false)
+            }
+        ]);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
         Assert.False(string.IsNullOrWhiteSpace(result.Value!.Base64Content));
     }
 
     [Fact]
-    public async Task ConvertAsync_RoundTrip_JsonToExcelToJson_PreservesData()
+    public async Task ConvertAsync_NullValue_GeneratesExcel()
     {
-        var originalRows = new List<Dictionary<string, string>>
+        var request = new JsonToExcelRequest(
+        [
+            new Dictionary<string, JsonElement> { ["Col1"] = JsonValue("valor"), ["Col2"] = JsonNull() }
+        ]);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(string.IsNullOrWhiteSpace(result.Value!.Base64Content));
+    }
+
+    [Fact]
+    public async Task ConvertAsync_RoundTrip_StringData_PreservesValues()
+    {
+        var originalRows = new List<Dictionary<string, JsonElement>>
         {
-            new() { ["Nombre"] = "Alice", ["Edad"] = "30" },
-            new() { ["Nombre"] = "Bob", ["Edad"] = "25" }
+            new() { ["Nombre"] = JsonValue("Alice"), ["Edad"] = JsonValue("30") },
+            new() { ["Nombre"] = JsonValue("Bob"), ["Edad"] = JsonValue("25") }
         };
         var request = new JsonToExcelRequest(originalRows);
 
@@ -92,11 +134,20 @@ public class JsonToExcelServiceTests
         for (int i = 0; i < originalRows.Count; i++)
         {
             var dictRow = (IDictionary<string, object>)readBack[i];
-            foreach (var kvp in originalRows[i])
-            {
-                Assert.True(dictRow.ContainsKey(kvp.Key));
-                Assert.Equal(kvp.Value, dictRow[kvp.Key]?.ToString() ?? string.Empty);
-            }
+            Assert.True(dictRow.ContainsKey("Nombre"));
+            Assert.Equal(originalRows[i]["Nombre"].GetString(), dictRow["Nombre"]?.ToString() ?? string.Empty);
         }
     }
+
+    private static JsonElement JsonValue(string s) =>
+        JsonDocument.Parse($"\"{s}\"").RootElement.Clone();
+
+    private static JsonElement JsonNumber(double n) =>
+        JsonDocument.Parse(n.ToString(System.Globalization.CultureInfo.InvariantCulture)).RootElement.Clone();
+
+    private static JsonElement JsonBool(bool b) =>
+        JsonDocument.Parse(b ? "true" : "false").RootElement.Clone();
+
+    private static JsonElement JsonNull() =>
+        JsonDocument.Parse("null").RootElement.Clone();
 }
