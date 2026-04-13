@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "FileForgeApi": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:63258;http://localhost:63259"
+    }
+  }
+}

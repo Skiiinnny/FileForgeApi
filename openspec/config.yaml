@@ -1,0 +1,39 @@
+schema: spec-driven
+
+context: |
+  Stack: .NET 8, ASP.NET Core Minimal API, AWS Lambda (RestApi mode), MiniExcel, System.Text.Json with source generators, PublishAot enabled.
+
+  Architecture: Vertical slice — each feature lives in Features/<Name>/ with exactly 8 files:
+    - <Name>Endpoint.cs         (route + handler, MapX extension)
+    - <Name>Request.cs          (input model)
+    - <Name>Response.cs         (output model)
+    - I<Name>Service.cs         (service interface)
+    - <Name>Service.cs          (service implementation)
+    - <Name>Service.Logging.cs  (partial logging decorator)
+    - <Name>Validator.cs        (FluentValidation validator)
+    - <Name>DependencyInjection.cs (AddX extension for Program.cs)
+  Registration: Program.cs calls AddX() and MapX() for each feature.
+  Tests live in FileForgeApi.Tests/Features/<Name>/.
+
+  Domain conventions:
+    - File content is always transmitted as Base64 strings.
+    - Spreadsheet rows are represented as Dictionary<string, string> (header → cell value).
+    - JSON uses camelCase (configured via source generators).
+    - Error responses use the format: { "error": "descriptive message" }.
+    - Common optional query parameters: separator (default ','), encoding (default 'utf-8'), newLine (default '\n').
+
+  AOT restriction: Because the project uses PublishAot with System.Text.Json source generators,
+  every new type that appears in a Request or Response (including generic wrappers) MUST be
+  registered in AppJsonSerializerContext (Shared/Serialization/AppJsonSerializerContext.cs).
+  Forgetting this causes a runtime serialization failure that is invisible at compile time.
+
+rules:
+  proposal:
+    - State explicitly whether this feature requires changes to AppJsonSerializerContext (Shared/Serialization/) and list the types that need to be added.
+    - State explicitly whether this feature affects the public API surface documented in README.md.
+
+  tasks:
+    - Always break implementation into the 8 files of the vertical slice pattern (Endpoint, Request, Response, IService, Service, Service.Logging, Validator, DependencyInjection).
+    - Always include a task to register the feature in Program.cs using both AddX() and MapX().
+    - Always include a task to add or update AppJsonSerializerContext if new serializable types are introduced.
+    - Always include a task to write integration tests in FileForgeApi.Tests/Features/<Name>/.
