@@ -64,11 +64,11 @@ public class ExcelToJsonServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Equal(2, result.Value!.Rows.Count);
-        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Nombre"].ValueKind);
-        Assert.Equal("Alice", result.Value.Rows[0]["Nombre"].GetString());
-        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Edad"].ValueKind);
-        Assert.Equal("30", result.Value.Rows[0]["Edad"].GetString());
+        Assert.Equal(2, result.Value!.Rows.Items.Count());
+        Assert.Equal(JsonValueKind.String, result.Value.Rows.Items.First()["Nombre"].ValueKind);
+        Assert.Equal("Alice", result.Value.Rows.Items.First()["Nombre"].GetString());
+        Assert.Equal(JsonValueKind.String, result.Value.Rows.Items.First()["Edad"].ValueKind);
+        Assert.Equal("30", result.Value.Rows.Items.First()["Edad"].GetString());
     }
 
     [Fact]
@@ -84,10 +84,10 @@ public class ExcelToJsonServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Single(result.Value!.Rows);
-        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Nombre"].ValueKind);
-        Assert.Equal(JsonValueKind.Number, result.Value.Rows[0]["Edad"].ValueKind);
-        Assert.Equal(30, result.Value.Rows[0]["Edad"].GetInt32());
+        Assert.Single(result.Value!.Rows.Items);
+        Assert.Equal(JsonValueKind.String, result.Value.Rows.Items.First()["Nombre"].ValueKind);
+        Assert.Equal(JsonValueKind.Number, result.Value.Rows.Items.First()["Edad"].ValueKind);
+        Assert.Equal(30, result.Value.Rows.Items.First()["Edad"].GetInt32());
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class ExcelToJsonServiceTests
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(JsonValueKind.String, result.Value!.Rows[0]["Valor"].ValueKind);
+        Assert.Equal(JsonValueKind.String, result.Value!.Rows.Items.First()["Valor"].ValueKind);
     }
 
     [Fact]
@@ -117,8 +117,8 @@ public class ExcelToJsonServiceTests
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
-        Assert.Single(result.Value!.Rows);
-        Assert.Equal("valor", result.Value.Rows[0]["Col1"].GetString());
+        Assert.Single(result.Value!.Rows.Items);
+        Assert.Equal("valor", result.Value.Rows.Items.First()["Col1"].GetString());
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class ExcelToJsonServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Empty(result.Value!.Rows);
+        Assert.Empty(result.Value!.Rows.Items);
     }
 
     [Fact]
@@ -150,7 +150,27 @@ public class ExcelToJsonServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Single(result.Value!.Rows);
+        Assert.Single(result.Value!.Rows.Items);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_WithPagination_ReturnsCorrectPage()
+    {
+        var data = Enumerable.Range(1, 10).Select(i => new Dictionary<string, object> { ["Id"] = i });
+        var base64 = CreateTestExcelBase64(data);
+        var request = new ExcelToJsonRequest(base64, Page: 2, PageSize: 3, InferTypes: true);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(10, result.Value!.Rows.TotalCount);
+        Assert.Equal(2, result.Value.Rows.Page);
+        Assert.Equal(3, result.Value.Rows.PageSize);
+        Assert.Equal(4, result.Value.Rows.TotalPages);
+        Assert.Equal(3, result.Value.Rows.Items.Count());
+        Assert.Equal(4, result.Value.Rows.Items.First()["Id"].GetInt32());
+        Assert.True(result.Value.Rows.HasNextPage);
+        Assert.True(result.Value.Rows.HasPreviousPage);
     }
 
     [Fact]

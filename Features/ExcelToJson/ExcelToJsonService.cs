@@ -2,6 +2,7 @@ using System.Text.Json;
 using FileForgeApi.Shared.Documents;
 using FileForgeApi.Shared.Json;
 using FileForgeApi.Shared.Results;
+using FileForgeApi.Shared.Pagination;
 using MiniExcelLibs;
 
 namespace FileForgeApi.Features.ExcelToJson;
@@ -59,6 +60,16 @@ public sealed class ExcelToJsonService(ILogger<ExcelToJsonService> logger, IDocu
             rows.Add(dict);
         }
 
-        return Result<ExcelToJsonResponse>.Success(new ExcelToJsonResponse(rows));
+        var paginatedItems = rows
+            .Skip(request.Skip)
+            .Take(request.ActualPageSize)
+            .ToList();
+
+        var paginatedResponse = PaginatedResponse<Dictionary<string, JsonElement>>.Create(
+            paginatedItems,
+            rows.Count,
+            request);
+
+        return Result<ExcelToJsonResponse>.Success(new ExcelToJsonResponse(paginatedResponse));
     }
 }

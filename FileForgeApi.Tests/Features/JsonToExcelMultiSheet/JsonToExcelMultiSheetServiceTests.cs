@@ -112,7 +112,7 @@ public class JsonToExcelMultiSheetServiceTests
         Assert.Equal(2, readResult.Value!.Sheets.Count);
         Assert.True(readResult.Value.Sheets.ContainsKey("Hoja1"));
         Assert.True(readResult.Value.Sheets.ContainsKey("Hoja2"));
-        Assert.Equal("A1", readResult.Value.Sheets["Hoja1"][0]["Col1"].GetString());
+        Assert.Equal("A1", readResult.Value.Sheets["Hoja1"].Items.First()["Col1"].GetString());
     }
 
     private static JsonElement JsonValue(string s) =>

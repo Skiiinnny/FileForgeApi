@@ -138,7 +138,7 @@ public class JsonToCsvServiceTests
         var fromCsvResult = await csvToJsonService.ConvertAsync(csvToJsonRequest);
         Assert.True(fromCsvResult.IsSuccess);
 
-        var readBack = fromCsvResult.Value!.Rows;
+        var readBack = fromCsvResult.Value!.Rows.Items.ToList();
         Assert.Equal(originalRows.Count, readBack.Count);
         Assert.Equal("Alice", readBack[0]["Nombre"].GetString());
         Assert.Equal("30", readBack[0]["Edad"].GetString());

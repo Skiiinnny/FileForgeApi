@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using NSubstitute;
 using System.Net;
 using System.Net.Http.Json;
+using FileForgeApi.Shared.Pagination;
 
 namespace FileForgeApi.Tests.Features.ExcelToJsonMultiSheet;
 
@@ -44,9 +45,17 @@ public class ExcelToJsonMultiSheetEndpointTests : IAsyncDisposable
     [Fact]
     public async Task Post_WithValidRequest_ReturnsOk()
     {
-        var response = new ExcelToJsonMultiSheetResponse(new Dictionary<string, List<Dictionary<string, JsonElement>>>
+        var rows = new List<Dictionary<string, JsonElement>>
         {
-            ["Sheet1"] = [new Dictionary<string, JsonElement> { ["Col1"] = JsonDocument.Parse("\"val1\"").RootElement.Clone() }]
+            new() { ["Col1"] = JsonDocument.Parse("\"val1\"").RootElement.Clone() }
+        };
+        var paginatedResponse = PaginatedResponse<Dictionary<string, JsonElement>>.Create(
+            rows,
+            rows.Count,
+            new PaginationParams());
+        var response = new ExcelToJsonMultiSheetResponse(new Dictionary<string, PaginatedResponse<Dictionary<string, JsonElement>>>
+        {
+            ["Sheet1"] = paginatedResponse
         });
         _service.ConvertAsync(Arg.Any<ExcelToJsonMultiSheetRequest?>())
             .Returns(Task.FromResult(Result<ExcelToJsonMultiSheetResponse>.Success(response)));

@@ -117,4 +117,22 @@ public class ExcelToJsonValidatorTests
         Assert.False(result.IsSuccess);
         Assert.Contains("URI", result.Error!);
     }
+
+    [Fact]
+    public void Validate_InvalidPage_ReturnsFailure()
+    {
+        var request = new ExcelToJsonRequest("AAAA", Page: 0);
+        var result = ExcelToJsonValidator.Validate(request);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("número de página", result.Error!);
+    }
+
+    [Fact]
+    public void Validate_InvalidPageSize_ReturnsFailure()
+    {
+        var request = new ExcelToJsonRequest("AAAA", PageSize: -1);
+        var result = ExcelToJsonValidator.Validate(request);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("tamaño de página", result.Error!);
+    }
 }

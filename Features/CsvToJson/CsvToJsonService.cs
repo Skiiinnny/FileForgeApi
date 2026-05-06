@@ -3,6 +3,7 @@ using FileForgeApi.Shared.Documents;
 using FileForgeApi.Shared.Encoding;
 using FileForgeApi.Shared.Json;
 using FileForgeApi.Shared.Results;
+using FileForgeApi.Shared.Pagination;
 using MiniExcelLibs;
 using MiniExcelLibs.Csv;
 
@@ -65,7 +66,17 @@ public sealed class CsvToJsonService(ILogger<CsvToJsonService> logger, IDocument
             rows.Add(dict);
         }
 
-        return Result<CsvToJsonResponse>.Success(new CsvToJsonResponse(rows));
+        var paginatedItems = rows
+            .Skip(request!.Skip)
+            .Take(request.ActualPageSize)
+            .ToList();
+
+        var paginatedResponse = PaginatedResponse<Dictionary<string, JsonElement>>.Create(
+            paginatedItems,
+            rows.Count,
+            request);
+
+        return Result<CsvToJsonResponse>.Success(new CsvToJsonResponse(paginatedResponse));
     }
 
     private static CsvConfiguration BuildCsvConfiguration(CsvToJsonRequest request)

@@ -81,4 +81,22 @@ public class ExcelToJsonMultiSheetValidatorTests
         Assert.False(result.IsSuccess);
         Assert.Contains("URI", result.Error!);
     }
+
+    [Fact]
+    public void Validate_InvalidPage_ReturnsFailure()
+    {
+        var request = new ExcelToJsonMultiSheetRequest("AAAA", Page: 0);
+        var result = ExcelToJsonMultiSheetValidator.Validate(request);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("número de página", result.Error!);
+    }
+
+    [Fact]
+    public void Validate_InvalidPageSize_ReturnsFailure()
+    {
+        var request = new ExcelToJsonMultiSheetRequest("AAAA", PageSize: -1);
+        var result = ExcelToJsonMultiSheetValidator.Validate(request);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("tamaño de página", result.Error!);
+    }
 }

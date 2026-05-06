@@ -111,4 +111,22 @@ public class CsvToJsonValidatorTests
         Assert.False(result.IsSuccess);
         Assert.Contains("URI", result.Error!);
     }
+
+    [Fact]
+    public void Validate_InvalidPage_ReturnsFailure()
+    {
+        var request = new CsvToJsonRequest("AAAA", Page: 0);
+        var result = CsvToJsonValidator.Validate(request);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("número de página", result.Error!);
+    }
+
+    [Fact]
+    public void Validate_InvalidPageSize_ReturnsFailure()
+    {
+        var request = new CsvToJsonRequest("AAAA", PageSize: -1);
+        var result = CsvToJsonValidator.Validate(request);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("tamaño de página", result.Error!);
+    }
 }

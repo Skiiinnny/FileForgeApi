@@ -15,6 +15,7 @@ using FileForgeApi.Features.ExcelToJsonMultiSheet;
 using FileForgeApi.Features.JsonToCsv;
 using FileForgeApi.Features.JsonToExcel;
 using FileForgeApi.Features.JsonToExcelMultiSheet;
+using FileForgeApi.Shared.Pagination;
 
 namespace FileForgeApi.Shared.Serialization;
 
@@ -52,6 +53,8 @@ namespace FileForgeApi.Shared.Serialization;
 [JsonSerializable(typeof(Dictionary<string, JsonElement>))]
 [JsonSerializable(typeof(List<Dictionary<string, JsonElement>>))]
 [JsonSerializable(typeof(Dictionary<string, List<Dictionary<string, JsonElement>>>))]
+[JsonSerializable(typeof(PaginatedResponse<Dictionary<string, JsonElement>>))]
+[JsonSerializable(typeof(Dictionary<string, PaginatedResponse<Dictionary<string, JsonElement>>>))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(Amazon.Lambda.APIGatewayEvents.APIGatewayProxyRequest))]
 [JsonSerializable(typeof(Amazon.Lambda.APIGatewayEvents.APIGatewayProxyResponse))]

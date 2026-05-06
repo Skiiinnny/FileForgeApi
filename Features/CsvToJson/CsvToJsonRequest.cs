@@ -1,3 +1,5 @@
+using FileForgeApi.Shared.Pagination;
+
 namespace FileForgeApi.Features.CsvToJson;
 
 public sealed record CsvToJsonRequest(
@@ -5,4 +7,10 @@ public sealed record CsvToJsonRequest(
     string? Separator = null,
     string? Encoding = null,
     string? DocumentUrl = null,
-    bool? InferTypes = false);
+    bool? InferTypes = false,
+    int? Page = null,
+    int? PageSize = null) : PaginationParams
+{
+    public override int? Page { get; init; } = Page;
+    public override int? PageSize { get; init; } = PageSize;
+}

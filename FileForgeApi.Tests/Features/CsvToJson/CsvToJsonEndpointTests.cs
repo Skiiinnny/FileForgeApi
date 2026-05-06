@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using NSubstitute;
 using System.Net;
 using System.Net.Http.Json;
+using FileForgeApi.Shared.Pagination;
 
 namespace FileForgeApi.Tests.Features.CsvToJson;
 
@@ -44,10 +45,15 @@ public class CsvToJsonEndpointTests : IAsyncDisposable
     [Fact]
     public async Task Post_WithValidRequest_ReturnsOk()
     {
-        var response = new CsvToJsonResponse(new List<Dictionary<string, JsonElement>>
+        var rows = new List<Dictionary<string, JsonElement>>
         {
             new() { ["Col1"] = JsonDocument.Parse("\"val1\"").RootElement.Clone() }
-        });
+        };
+        var paginatedResponse = PaginatedResponse<Dictionary<string, JsonElement>>.Create(
+            rows,
+            rows.Count,
+            new PaginationParams());
+        var response = new CsvToJsonResponse(paginatedResponse);
         _service.ConvertAsync(Arg.Any<CsvToJsonRequest?>())
             .Returns(Task.FromResult(Result<CsvToJsonResponse>.Success(response)));
 

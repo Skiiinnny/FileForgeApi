@@ -89,8 +89,8 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
         Assert.Equal(2, readResult.Value!.Sheets.Count);
         Assert.True(readResult.Value.Sheets.ContainsKey("Ventas"));
         Assert.True(readResult.Value.Sheets.ContainsKey("Gastos"));
-        Assert.Equal("Manzana", readResult.Value.Sheets["Ventas"][0]["Producto"].GetString());
-        Assert.Equal("Alquiler", readResult.Value.Sheets["Gastos"][0]["Concepto"].GetString());
+        Assert.Equal("Manzana", readResult.Value.Sheets["Ventas"].Items.First()["Producto"].GetString());
+        Assert.Equal("Alquiler", readResult.Value.Sheets["Gastos"].Items.First()["Concepto"].GetString());
     }
 
     // 6.3 - Custom separator (;)
@@ -118,8 +118,8 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
 
         Assert.True(readResult.IsSuccess);
         Assert.True(readResult.Value!.Sheets.ContainsKey("Datos"));
-        Assert.Equal("Alice", readResult.Value.Sheets["Datos"][0]["Nombre"].GetString());
-        Assert.Equal("30", readResult.Value.Sheets["Datos"][0]["Edad"].GetString());
+        Assert.Equal("Alice", readResult.Value.Sheets["Datos"].Items.First()["Nombre"].GetString());
+        Assert.Equal("30", readResult.Value.Sheets["Datos"].Items.First()["Edad"].GetString());
     }
 
     // 6.4 - Empty Sheets → HTTP 400
@@ -235,7 +235,7 @@ public class CsvToExcelMultiSheetTests : IAsyncDisposable
 
         Assert.True(readResult.IsSuccess);
         Assert.True(readResult.Value!.Sheets.ContainsKey("Personas"));
-        Assert.Empty(readResult.Value.Sheets["Personas"]);
+        Assert.Empty(readResult.Value.Sheets["Personas"].Items);
     }
 
     private static string CreateCsvBase64(char separator, IEnumerable<Dictionary<string, object>> rows)

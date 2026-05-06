@@ -18,6 +18,12 @@ public static class ExcelToJsonMultiSheetValidator
         if (!hasBase64 && !hasUrl)
             return Result<(byte[]?, bool)>.Failure("Se debe proporcionar exactamente uno de los dos campos: Base64Content o DocumentUrl.");
 
+        if (request.Page is <= 0)
+            return Result<(byte[]?, bool)>.Failure("El número de página debe ser mayor que 0.");
+
+        if (request.PageSize is <= 0)
+            return Result<(byte[]?, bool)>.Failure("El tamaño de página debe ser mayor que 0.");
+
         if (hasUrl)
         {
             if (!Uri.TryCreate(request.DocumentUrl, UriKind.Absolute, out _))
