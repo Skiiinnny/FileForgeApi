@@ -9,7 +9,7 @@ public static class ExcelToJsonMultiSheetEndpoint
         app.MapPost("/api/excel/to-json/multi-sheet", ConvertHandler)
             .WithName("ExcelToJsonMultiSheet")
             .WithTags("Excel")
-            .WithDescription("Convierte un archivo Excel codificado en Base64 a formato JSON incluyendo todas las hojas. Cada hoja se devuelve como un objeto con el nombre de la hoja como clave.")
+            .WithDescription("Convierte un archivo Excel codificado en Base64 a formato JSON incluyendo todas las hojas. Cada hoja se devuelve como un objeto con el nombre de la hoja como clave. Soporta paginación por hoja mediante los parámetros opcionales Page y PageSize.")
             .Accepts<ExcelToJsonMultiSheetRequest>("application/json")
             .Produces<ExcelToJsonMultiSheetResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);

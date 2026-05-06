@@ -72,9 +72,9 @@ public class ExcelToJsonMultiSheetServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value!.Sheets.Count);
-        Assert.Equal(JsonValueKind.String, result.Value.Sheets["Hoja1"][0]["Col2"].ValueKind);
-        Assert.Equal("1", result.Value.Sheets["Hoja1"][0]["Col2"].GetString());
-        Assert.Equal("x1", result.Value.Sheets["Hoja2"][0]["X"].GetString());
+        Assert.Equal(JsonValueKind.String, result.Value.Sheets["Hoja1"].Items.First()["Col2"].ValueKind);
+        Assert.Equal("1", result.Value.Sheets["Hoja1"].Items.First()["Col2"].GetString());
+        Assert.Equal("x1", result.Value.Sheets["Hoja2"].Items.First()["X"].GetString());
     }
 
     [Fact]
@@ -92,9 +92,9 @@ public class ExcelToJsonMultiSheetServiceTests
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(JsonValueKind.String, result.Value!.Sheets["Hoja1"][0]["Col1"].ValueKind);
-        Assert.Equal(JsonValueKind.Number, result.Value.Sheets["Hoja1"][0]["Col2"].ValueKind);
-        Assert.Equal(42, result.Value.Sheets["Hoja1"][0]["Col2"].GetInt32());
+        Assert.Equal(JsonValueKind.String, result.Value!.Sheets["Hoja1"].Items.First()["Col1"].ValueKind);
+        Assert.Equal(JsonValueKind.Number, result.Value.Sheets["Hoja1"].Items.First()["Col2"].ValueKind);
+        Assert.Equal(42, result.Value.Sheets["Hoja1"].Items.First()["Col2"].GetInt32());
     }
 
     [Fact]
@@ -114,8 +114,36 @@ public class ExcelToJsonMultiSheetServiceTests
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value!.Sheets);
         Assert.True(result.Value.Sheets.ContainsKey("Sheet1"));
-        Assert.Single(result.Value.Sheets["Sheet1"]);
-        Assert.Equal("valor", result.Value.Sheets["Sheet1"][0]["A"].GetString());
+        Assert.Single(result.Value.Sheets["Sheet1"].Items);
+        Assert.Equal("valor", result.Value.Sheets["Sheet1"].Items.First()["A"].GetString());
+    }
+
+    [Fact]
+    public async Task ConvertAsync_WithPagination_ReturnsCorrectPagePerSheet()
+    {
+        var data1 = Enumerable.Range(1, 10).Select(i => new Dictionary<string, object> { ["Id"] = i });
+        var data2 = Enumerable.Range(101, 5).Select(i => new Dictionary<string, object> { ["Id"] = i });
+        var base64 = CreateTestMultiSheetExcelBase64(new Dictionary<string, object>
+        {
+            ["Sheet1"] = data1,
+            ["Sheet2"] = data2
+        });
+        var request = new ExcelToJsonMultiSheetRequest(base64, Page: 2, PageSize: 3, InferTypes: true);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.Sheets.Count);
+
+        // Sheet 1: 10 items, page 2 of size 3 -> items 4, 5, 6
+        Assert.Equal(10, result.Value.Sheets["Sheet1"].TotalCount);
+        Assert.Equal(3, result.Value.Sheets["Sheet1"].Items.Count());
+        Assert.Equal(4, result.Value.Sheets["Sheet1"].Items.First()["Id"].GetInt32());
+
+        // Sheet 2: 5 items, page 2 of size 3 -> items 4, 5 (104, 105)
+        Assert.Equal(5, result.Value.Sheets["Sheet2"].TotalCount);
+        Assert.Equal(2, result.Value.Sheets["Sheet2"].Items.Count());
+        Assert.Equal(104, result.Value.Sheets["Sheet2"].Items.First()["Id"].GetInt32());
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using System.Text.Json;
 using FileForgeApi.Shared.Documents;
 using FileForgeApi.Shared.Json;
 using FileForgeApi.Shared.Results;
+using FileForgeApi.Shared.Pagination;
 using MiniExcelLibs;
 
 namespace FileForgeApi.Features.ExcelToJsonMultiSheet;
@@ -26,7 +27,7 @@ public sealed class ExcelToJsonMultiSheetService(ILogger<ExcelToJsonMultiSheetSe
         }
 
         var inferTypes = request!.InferTypes == true;
-        var sheets = new Dictionary<string, List<Dictionary<string, JsonElement>>>();
+        var sheets = new Dictionary<string, PaginatedResponse<Dictionary<string, JsonElement>>>();
 
         try
         {
@@ -61,7 +62,17 @@ public sealed class ExcelToJsonMultiSheetService(ILogger<ExcelToJsonMultiSheetSe
                     rows.Add(dict);
                 }
 
-                sheets[sheetName] = rows;
+                var paginatedItems = rows
+                    .Skip(request!.Skip)
+                    .Take(request.ActualPageSize)
+                    .ToList();
+
+                var paginatedResponse = PaginatedResponse<Dictionary<string, JsonElement>>.Create(
+                    paginatedItems,
+                    rows.Count,
+                    request);
+
+                sheets[sheetName] = paginatedResponse;
             }
         }
         catch (Exception ex)

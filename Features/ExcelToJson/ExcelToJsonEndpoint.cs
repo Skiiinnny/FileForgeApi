@@ -9,7 +9,7 @@ public static class ExcelToJsonEndpoint
         app.MapPost("/api/excel/to-json", ConvertHandler)
             .WithName("ExcelToJson")
             .WithTags("Excel")
-            .WithDescription("Convierte un archivo Excel codificado en Base64 a formato JSON. Cada fila del Excel se transforma en un diccionario clave-valor usando los encabezados como claves.")
+            .WithDescription("Convierte un archivo Excel codificado en Base64 a formato JSON. Cada fila del Excel se transforma en un diccionario clave-valor usando los encabezados como claves. Soporta paginación mediante los parámetros opcionales Page y PageSize.")
             .Accepts<ExcelToJsonRequest>("application/json")
             .Produces<ExcelToJsonResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);

@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using NSubstitute;
 using System.Net;
 using System.Net.Http.Json;
+using FileForgeApi.Shared.Pagination;
 
 namespace FileForgeApi.Tests.Features.ExcelToJson;
 
@@ -46,10 +47,15 @@ public class ExcelToJsonEndpointTests : IAsyncDisposable
     [Fact]
     public async Task Post_WithValidRequest_ReturnsOk()
     {
-        var response = new ExcelToJsonResponse(new List<Dictionary<string, JsonElement>>
+        var rows = new List<Dictionary<string, JsonElement>>
         {
             new() { ["Col1"] = JsonDocument.Parse("\"val1\"").RootElement.Clone() }
-        });
+        };
+        var paginatedResponse = PaginatedResponse<Dictionary<string, JsonElement>>.Create(
+            rows,
+            rows.Count,
+            new PaginationParams());
+        var response = new ExcelToJsonResponse(paginatedResponse);
         _service.ConvertAsync(Arg.Any<ExcelToJsonRequest?>())
             .Returns(Task.FromResult(Result<ExcelToJsonResponse>.Success(response)));
 

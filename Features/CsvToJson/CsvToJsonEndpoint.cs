@@ -9,7 +9,7 @@ public static class CsvToJsonEndpoint
         app.MapPost("/api/csv/to-json", ConvertHandler)
             .WithName("CsvToJson")
             .WithTags("Csv")
-            .WithDescription("Convierte un archivo CSV codificado en Base64 a formato JSON. Cada fila del CSV se transforma en un diccionario clave-valor usando la primera fila como encabezados.")
+            .WithDescription("Convierte un archivo CSV codificado en Base64 a formato JSON. Cada fila del CSV se transforma en un diccionario clave-valor usando la primera fila como encabezados. Soporta paginación mediante los parámetros opcionales Page y PageSize.")
             .Accepts<CsvToJsonRequest>("application/json")
             .Produces<CsvToJsonResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);

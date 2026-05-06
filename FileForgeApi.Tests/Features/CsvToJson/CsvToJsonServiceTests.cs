@@ -66,11 +66,11 @@ public class CsvToJsonServiceTests
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value!.Rows.Count);
-        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Nombre"].ValueKind);
-        Assert.Equal("Alice", result.Value.Rows[0]["Nombre"].GetString());
-        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Edad"].ValueKind);
-        Assert.Equal("30", result.Value.Rows[0]["Edad"].GetString());
+        Assert.Equal(2, result.Value!.Rows.Items.Count());
+        Assert.Equal(JsonValueKind.String, result.Value.Rows.Items.First()["Nombre"].ValueKind);
+        Assert.Equal("Alice", result.Value.Rows.Items.First()["Nombre"].GetString());
+        Assert.Equal(JsonValueKind.String, result.Value.Rows.Items.First()["Edad"].ValueKind);
+        Assert.Equal("30", result.Value.Rows.Items.First()["Edad"].GetString());
     }
 
     [Fact]
@@ -85,10 +85,10 @@ public class CsvToJsonServiceTests
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
-        Assert.Single(result.Value!.Rows);
-        Assert.Equal(JsonValueKind.String, result.Value.Rows[0]["Nombre"].ValueKind);
-        Assert.Equal(JsonValueKind.Number, result.Value.Rows[0]["Edad"].ValueKind);
-        Assert.Equal(30, result.Value.Rows[0]["Edad"].GetInt32());
+        Assert.Single(result.Value!.Rows.Items);
+        Assert.Equal(JsonValueKind.String, result.Value.Rows.Items.First()["Nombre"].ValueKind);
+        Assert.Equal(JsonValueKind.Number, result.Value.Rows.Items.First()["Edad"].ValueKind);
+        Assert.Equal(30, result.Value.Rows.Items.First()["Edad"].GetInt32());
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public class CsvToJsonServiceTests
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(JsonValueKind.String, result.Value!.Rows[0]["Valor"].ValueKind);
+        Assert.Equal(JsonValueKind.String, result.Value!.Rows.Items.First()["Valor"].ValueKind);
     }
 
     [Fact]
@@ -117,9 +117,9 @@ public class CsvToJsonServiceTests
         var result = await _sut.ConvertAsync(request);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value!.Rows.Count);
-        Assert.Equal(JsonValueKind.True, result.Value.Rows[0]["Activo"].ValueKind);
-        Assert.Equal(JsonValueKind.False, result.Value.Rows[1]["Activo"].ValueKind);
+        Assert.Equal(2, result.Value!.Rows.Items.Count());
+        Assert.Equal(JsonValueKind.True, result.Value.Rows.Items.First()["Activo"].ValueKind);
+        Assert.Equal(JsonValueKind.False, result.Value.Rows.Items.Last()["Activo"].ValueKind);
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class CsvToJsonServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Empty(result.Value!.Rows);
+        Assert.Empty(result.Value!.Rows.Items);
     }
 
     [Fact]
@@ -148,9 +148,27 @@ public class CsvToJsonServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Single(result.Value!.Rows);
-        Assert.Equal("1", result.Value.Rows[0]["A"].GetString());
-        Assert.Equal("2", result.Value.Rows[0]["B"].GetString());
+        Assert.Single(result.Value!.Rows.Items);
+        Assert.Equal("1", result.Value.Rows.Items.First()["A"].GetString());
+        Assert.Equal("2", result.Value.Rows.Items.First()["B"].GetString());
+    }
+
+    [Fact]
+    public async Task ConvertAsync_WithPagination_ReturnsCorrectPage()
+    {
+        var data = Enumerable.Range(1, 10).Select(i => new Dictionary<string, object> { ["Id"] = i });
+        var base64 = CreateTestCsvBase64Internal(data);
+        var request = new CsvToJsonRequest(base64, Page: 2, PageSize: 3, InferTypes: true);
+
+        var result = await _sut.ConvertAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(10, result.Value!.Rows.TotalCount);
+        Assert.Equal(2, result.Value.Rows.Page);
+        Assert.Equal(3, result.Value.Rows.PageSize);
+        Assert.Equal(4, result.Value.Rows.TotalPages);
+        Assert.Equal(3, result.Value.Rows.Items.Count());
+        Assert.Equal(4, result.Value.Rows.Items.First()["Id"].GetInt32());
     }
 
     [Fact]
