@@ -67,10 +67,13 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"Skiiinnny_FileForgeApi" /o:"skiiinnny" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
-          dotnet build
-          dotnet test FileForgeApi.Tests/FileForgeApi.Tests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          $covDir = Join-Path $env:GITHUB_WORKSPACE "sonar-coverage-out"
+          if (Test-Path $covDir) { Remove-Item $covDir -Recurse -Force }
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"Skiiinnny_FileForgeApi" /o:"skiiinnny" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="$env:SONAR_TOKEN" /d:sonar.cs.opencover.reportsPaths="sonar-coverage-out/**/coverage.opencover.xml"
+          dotnet build FileForgeApi.sln --configuration Release --no-incremental
+          dotnet test FileForgeApi.Tests/FileForgeApi.Tests.csproj --configuration Release --no-build --results-directory $covDir --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+          Get-ChildItem -Path $covDir -Recurse -Filter coverage.opencover.xml -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "Coverage file:" $_.FullName }
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"
 
   deploy:
     name: Deploy to Lambda

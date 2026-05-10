@@ -29,6 +29,7 @@ wwwroot/
 
 # Test results
 TestResults/
+sonar-coverage-out/
 *.trx
 *.coverage
 *.coveragexml
