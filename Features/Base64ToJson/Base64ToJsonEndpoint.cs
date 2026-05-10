@@ -19,6 +19,12 @@ public static class Base64ToJsonEndpoint
         [FromBody] Base64ToJsonRequest? request,
         IBase64ToJsonService service)
     {
-        return await service.ConvertAsync(request);
+        var result = await service.ConvertAsync(request);
+
+        if (!result.IsSuccess)
+            return Results.BadRequest(new { error = result.Error });
+
+        var file = result.Value!;
+        return Results.File(file.Content, file.ContentType, file.DownloadFileName);
     }
 }

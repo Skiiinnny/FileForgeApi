@@ -1,6 +1,8 @@
+using FileForgeApi.Shared.Results;
+
 namespace FileForgeApi.Features.Base64ToJson;
 
 public interface IBase64ToJsonService
 {
-    Task<IResult> ConvertAsync(Base64ToJsonRequest? request);
+    Task<Result<BinaryFilePayload>> ConvertAsync(Base64ToJsonRequest? request);
 }

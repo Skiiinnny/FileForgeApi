@@ -57,5 +57,7 @@ logs/
 /.cline
 /.clinerules
 /.gemini
-/.github
 /.vscode
+/.cursor
+/graphify-out
+/.github/prompts

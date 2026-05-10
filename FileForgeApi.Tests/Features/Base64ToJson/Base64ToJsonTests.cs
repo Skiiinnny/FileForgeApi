@@ -206,18 +206,19 @@ public class Base64ToJsonTests : IAsyncDisposable
     // --- Service tests ---
 
     [Fact]
-    public async Task Service_NullRequest_ReturnsBadRequest()
+    public async Task Service_NullRequest_ReturnsFailure()
     {
         var logger = NullLogger<Base64ToJsonService>.Instance;
         var sut = new Base64ToJsonService(logger, _fetchService);
 
         var result = await sut.ConvertAsync(null);
 
-        Assert.Equal(400, (result as Microsoft.AspNetCore.Http.IStatusCodeHttpResult)?.StatusCode);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("obligatorio", result.Error!);
     }
 
     [Fact]
-    public async Task Service_ValidRequest_ReturnsFileResult()
+    public async Task Service_ValidRequest_ReturnsBinaryPayload()
     {
         var logger = NullLogger<Base64ToJsonService>.Instance;
         var sut = new Base64ToJsonService(logger, _fetchService);
@@ -225,7 +226,10 @@ public class Base64ToJsonTests : IAsyncDisposable
 
         var result = await sut.ConvertAsync(new Base64ToJsonRequest(Convert.ToBase64String(bytes)));
 
-        Assert.IsAssignableFrom<IResult>(result);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(bytes, result.Value!.Content);
+        Assert.Equal("application/json", result.Value.ContentType);
+        Assert.Equal("file.json", result.Value.DownloadFileName);
     }
 
     public async ValueTask DisposeAsync()
