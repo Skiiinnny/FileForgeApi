@@ -29,6 +29,7 @@ wwwroot/
 
 # Test results
 TestResults/
+sonar-coverage-out/
 *.trx
 *.coverage
 *.coveragexml
@@ -57,5 +58,7 @@ logs/
 /.cline
 /.clinerules
 /.gemini
-/.github
 /.vscode
+/.cursor
+/graphify-out
+/.github/prompts

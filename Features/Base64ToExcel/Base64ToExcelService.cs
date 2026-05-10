@@ -1,10 +1,11 @@
 using FileForgeApi.Shared.Documents;
+using FileForgeApi.Shared.Results;
 
 namespace FileForgeApi.Features.Base64ToExcel;
 
 public sealed class Base64ToExcelService(ILogger<Base64ToExcelService> logger, IDocumentFetchService documentFetchService) : IBase64ToExcelService
 {
-    public async Task<IResult> ConvertAsync(Base64ToExcelRequest? request)
+    public async Task<Result<BinaryFilePayload>> ConvertAsync(Base64ToExcelRequest? request)
     {
         Base64ToExcelServiceLogging.ConvertRequested(logger, request?.Filename);
 
@@ -12,7 +13,7 @@ public sealed class Base64ToExcelService(ILogger<Base64ToExcelService> logger, I
         if (!validation.IsSuccess)
         {
             Base64ToExcelServiceLogging.ValidationFailed(logger, validation.Error!);
-            return Results.BadRequest(new { error = validation.Error });
+            return Result<BinaryFilePayload>.Failure(validation.Error!);
         }
 
         var (fileBytes, useUrl) = validation.Value!;
@@ -23,15 +24,18 @@ public sealed class Base64ToExcelService(ILogger<Base64ToExcelService> logger, I
             if (!fetchResult.IsSuccess)
             {
                 Base64ToExcelServiceLogging.ValidationFailed(logger, fetchResult.Error!);
-                return Results.BadRequest(new { error = fetchResult.Error });
+                return Result<BinaryFilePayload>.Failure(fetchResult.Error!);
             }
             fileBytes = fetchResult.Value;
         }
 
         string filename = request!.Filename ?? "file.xlsx";
 
-        IResult result = Results.File(fileBytes!, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
         Base64ToExcelServiceLogging.ConvertSucceeded(logger, fileBytes!.Length);
-        return result;
+        return Result<BinaryFilePayload>.Success(
+            new BinaryFilePayload(
+                fileBytes!,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                filename));
     }
 }

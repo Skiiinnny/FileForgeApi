@@ -3,13 +3,13 @@ schema: spec-driven
 context: |
   Stack: .NET 8, ASP.NET Core Minimal API, AWS Lambda (RestApi mode), MiniExcel, System.Text.Json with source generators, PublishAot enabled.
 
-  Architecture: Vertical slice — each feature lives in Features/<Name>/ with exactly 8 files:
+  Architecture: Vertical slice — each feature lives in Features/<Name>/ with typically 8 files:
     - <Name>Endpoint.cs         (route + handler, MapX extension)
     - <Name>Request.cs          (input model)
-    - <Name>Response.cs         (output model)
+    - <Name>Response.cs         (output model for JSON; omit when the API returns binary download only — use Result<BinaryFilePayload> from Shared/Results/BinaryFilePayload.cs instead)
     - I<Name>Service.cs         (service interface)
     - <Name>Service.cs          (service implementation)
-    - <Name>Service.Logging.cs  (partial logging decorator)
+    - <Name>Service.Logging.cs  (partial LoggerMessage helpers)
     - <Name>Validator.cs        (FluentValidation validator)
     - <Name>DependencyInjection.cs (AddX extension for Program.cs)
   Registration: Program.cs calls AddX() and MapX() for each feature.
@@ -34,7 +34,7 @@ rules:
     - State explicitly whether this feature affects the public API surface documented in README.md.
 
   tasks:
-    - Always break implementation into the 8 files of the vertical slice pattern (Endpoint, Request, Response, IService, Service, Service.Logging, Validator, DependencyInjection).
+    - Break implementation into the vertical slice pattern (Endpoint, Request, Response when JSON body, IService, Service, Service.Logging, Validator, DependencyInjection). For binary-only download features, use Shared Results/BinaryFilePayload instead of a local Response.cs.
     - Always include a task to register the feature in Program.cs using both AddX() and MapX().
     - Always include a task to add or update AppJsonSerializerContext if new serializable types are introduced.
     - Always include a task to write integration tests in FileForgeApi.Tests/Features/<Name>/.

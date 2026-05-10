@@ -1,10 +1,11 @@
 using FileForgeApi.Shared.Documents;
+using FileForgeApi.Shared.Results;
 
 namespace FileForgeApi.Features.Base64ToJson;
 
 public sealed class Base64ToJsonService(ILogger<Base64ToJsonService> logger, IDocumentFetchService documentFetchService) : IBase64ToJsonService
 {
-    public async Task<IResult> ConvertAsync(Base64ToJsonRequest? request)
+    public async Task<Result<BinaryFilePayload>> ConvertAsync(Base64ToJsonRequest? request)
     {
         Base64ToJsonServiceLogging.ConvertRequested(logger, request?.Filename);
 
@@ -12,7 +13,7 @@ public sealed class Base64ToJsonService(ILogger<Base64ToJsonService> logger, IDo
         if (!validation.IsSuccess)
         {
             Base64ToJsonServiceLogging.ValidationFailed(logger, validation.Error!);
-            return Results.BadRequest(new { error = validation.Error });
+            return Result<BinaryFilePayload>.Failure(validation.Error!);
         }
 
         var (fileBytes, useUrl) = validation.Value!;
@@ -23,15 +24,15 @@ public sealed class Base64ToJsonService(ILogger<Base64ToJsonService> logger, IDo
             if (!fetchResult.IsSuccess)
             {
                 Base64ToJsonServiceLogging.ValidationFailed(logger, fetchResult.Error!);
-                return Results.BadRequest(new { error = fetchResult.Error });
+                return Result<BinaryFilePayload>.Failure(fetchResult.Error!);
             }
             fileBytes = fetchResult.Value;
         }
 
         string filename = request!.Filename ?? "file.json";
 
-        IResult result = Results.File(fileBytes!, "application/json", filename);
         Base64ToJsonServiceLogging.ConvertSucceeded(logger, fileBytes!.Length);
-        return result;
+        return Result<BinaryFilePayload>.Success(
+            new BinaryFilePayload(fileBytes!, "application/json", filename));
     }
 }

@@ -1,10 +1,11 @@
 using FileForgeApi.Shared.Documents;
+using FileForgeApi.Shared.Results;
 
 namespace FileForgeApi.Features.Base64ToCsv;
 
 public sealed class Base64ToCsvService(ILogger<Base64ToCsvService> logger, IDocumentFetchService documentFetchService) : IBase64ToCsvService
 {
-    public async Task<IResult> ConvertAsync(Base64ToCsvRequest? request)
+    public async Task<Result<BinaryFilePayload>> ConvertAsync(Base64ToCsvRequest? request)
     {
         Base64ToCsvServiceLogging.ConvertRequested(logger, request?.Filename);
 
@@ -12,7 +13,7 @@ public sealed class Base64ToCsvService(ILogger<Base64ToCsvService> logger, IDocu
         if (!validation.IsSuccess)
         {
             Base64ToCsvServiceLogging.ValidationFailed(logger, validation.Error!);
-            return Results.BadRequest(new { error = validation.Error });
+            return Result<BinaryFilePayload>.Failure(validation.Error!);
         }
 
         var (fileBytes, useUrl) = validation.Value!;
@@ -23,15 +24,15 @@ public sealed class Base64ToCsvService(ILogger<Base64ToCsvService> logger, IDocu
             if (!fetchResult.IsSuccess)
             {
                 Base64ToCsvServiceLogging.ValidationFailed(logger, fetchResult.Error!);
-                return Results.BadRequest(new { error = fetchResult.Error });
+                return Result<BinaryFilePayload>.Failure(fetchResult.Error!);
             }
             fileBytes = fetchResult.Value;
         }
 
         string filename = request!.Filename ?? "file.csv";
 
-        IResult result = Results.File(fileBytes!, "text/csv", filename);
         Base64ToCsvServiceLogging.ConvertSucceeded(logger, fileBytes!.Length);
-        return result;
+        return Result<BinaryFilePayload>.Success(
+            new BinaryFilePayload(fileBytes!, "text/csv", filename));
     }
 }
